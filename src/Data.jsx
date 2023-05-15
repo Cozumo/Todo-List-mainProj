@@ -1,5 +1,5 @@
 
-const TasksAll = [
+let TasksAll = [
     {"id": 1, "message": "Lorem Ipsum Etc", "iscompleted":false},
     {"id": 2, "message": "Complete Uni Work", "iscompleted":false},
     {"id": 3, "message": "Take class on Udemy", "iscompleted":false},
@@ -8,5 +8,9 @@ const TasksAll = [
     {"id": 6, "message": "Play Videogames", "iscompleted":true},
     {"id": 7, "message": "Do Assignment #1", "iscompleted":true}
   ]
+
+export const setTasksAll = (newTasks) => {
+    TasksAll = newTasks;
+}
 
 export default TasksAll;

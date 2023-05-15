@@ -1,14 +1,19 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
-import {  Pressable, StyleSheet, Text, View, SectionList, TurboModuleRegistry } from 'react-native';
-import { RadioButton, IconButton, Menu, Divider, Provider } from 'react-native-paper';
-import TasksAll from './Data.jsx';
+import { Pressable, StyleSheet, Text, View, SectionList, TurboModuleRegistry } from 'react-native';
+import {  RadioButton, IconButton, Menu, Divider, Provider } from 'react-native-paper';
+import TasksAll, {setTasksAll} from './Data.jsx';
 
 
 const Content = () => {
 
-  const [checkList , setcheckList] = useState([]);
-  const [Tasks, setTasks] = useState([]);
-  const [sectionData, setsectionData] = useState([
+  const [checkList , setcheckList] = useState([]);    //Selected Items
+  const [Tasks, setTasks] = useState([]);             //Tasks List 
+  const [visible, setVisible] = useState(false);      //Menu Visibility
+
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => setVisible(false);
+
+  const [sectionData, setsectionData] = useState([    //Section List
     {
     "type": "Incompleted",
     "data":[
@@ -18,10 +23,6 @@ const Content = () => {
     "data":[
   ]}
   ]);
-  const [visible, setVisible] = useState(false);
-
-  const openMenu = () => setVisible(true);
-  const closeMenu = () => setVisible(false);
   
   
   const setData = (Tasks) => { //setting data into section List 
@@ -59,8 +60,11 @@ const Content = () => {
         const setof = Tasks.find(({id}) => id === element);
         setof.iscompleted = true;
         Tasks[Tasks.findIndex(({id}) => id === element)] = setof;
-        console.log(Tasks);
     });
+    setTasksAll(Tasks);
+    setTasks([...Tasks]);
+    setcheckList([]);
+    setVisible(false);
   }
 
   function settoIncomplete(){
@@ -68,8 +72,23 @@ const Content = () => {
         const setof = Tasks.find(({id}) => id === element);
         setof.iscompleted = false;
         Tasks[Tasks.findIndex(({id}) => id === element)] = setof;
-        console.log(Tasks);
     });
+    setTasksAll(Tasks);
+    setTasks([...Tasks]);
+    setcheckList([]);
+    setVisible(false);
+  }
+
+  function deleteTask(){
+    checkList.map(element => {
+        const index = Tasks.findIndex(({id}) => id === element);
+        Tasks.splice(index, 1);
+    });
+    setcheckList([]);
+    setData(Tasks);
+    setTasksAll(Tasks);
+    setTasks([...Tasks]);
+    setVisible(false);
   }
 
   function checkradio(item){
@@ -105,11 +124,10 @@ const Content = () => {
           <Divider/>
           <Menu.Item onPress={() => {settoIncomplete()}} title="Mark Incomplete" />
           <Divider/>
-          <Menu.Item onPress={() => {settoIncomplete()}} title="Delete" />
+          <Menu.Item onPress={() => {deleteTask()}} title="Delete" />
         </Menu>
       </Provider>
     </View>
-
 
     <SectionList
     sections={sectionData}
@@ -117,7 +135,7 @@ const Content = () => {
     renderSectionHeader={renderTaskHeader}
     />
 
-    <Pressable style={styles.button} onPress={() => {console.log('Added')}}>
+    <Pressable style={styles.button} onPress={() => console.log("Added")}>
     <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>+</Text>
     </Pressable>
   </View>
