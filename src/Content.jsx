@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, SectionList, TurboModuleRegistry } from 'react-native';
-import {  RadioButton, IconButton, Menu, Divider, Provider } from 'react-native-paper';
+import { RadioButton, IconButton, Menu, Divider, Provider, TextInput } from 'react-native-paper';
 import TasksAll, {setTasksAll} from './Data.jsx';
 
 
@@ -112,12 +112,17 @@ const Content = () => {
   }
 
 
+  
+  const [modalvisible, setmodalvisible] = useState(false);
+  const [text, setText] = useState("");
+
   return <View style={styles.mainContainer}>
     <View style={styles.iconStyle}>
       <IconButton style={{position:'relative', right:-100}} icon='dots-vertical' iconColor='white' size={20} onPress={openMenu} />
       <Provider>
         <Menu 
           visible={visible}
+          overlayAccessibilityLabel={'Close menu'}
           onDismiss={closeMenu}
           anchor={{x: 0, y: 20}}>
           <Menu.Item onPress={() => {settoComplete()}} title="Mark Complete" />
@@ -135,8 +140,26 @@ const Content = () => {
     renderSectionHeader={renderTaskHeader}
     />
 
-    <Pressable style={styles.button} onPress={() => console.log("Added")}>
-    <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>+</Text>
+    {modalvisible &&
+      <View style={styles.addMenu}>
+      <IconButton style={{marginLeft: '90%', marginBottom: 10}} icon='close' iconColor='white' size={20} onPress={() => (setmodalvisible(false))}/>
+      <TextInput
+        label={"Enter Username"}
+        placeholder={"Enter Username"}
+        value={text}
+        style={{backgroundColor: '#4d484a'}}
+        onChangeText={text => setText(text)}
+        theme={{
+          dark: true,
+          colors: {
+                     primary: '#74b0a6',secondary: '#74b0a6', 
+             }
+       }}
+      />
+    </View>}
+
+    <Pressable style={styles.button} onPress={() => (setmodalvisible(true))}>
+      <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>+</Text>
     </Pressable>
   </View>
 }
@@ -188,6 +211,15 @@ const styles = StyleSheet.create({
         margin: 0,
         padding: 0,
         width: 150
+      },
+      addMenu: {
+        flex: 1,
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(45, 40, 42, 0.8)',
+        zIndex: 2,
+        padding: 20,
       }
 })
 
