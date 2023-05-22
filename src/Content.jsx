@@ -1,7 +1,10 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
-import { Pressable, StyleSheet, Text, View, SectionList, TurboModuleRegistry } from 'react-native';
-import { RadioButton, IconButton, Menu, Divider, Provider, TextInput } from 'react-native-paper';
+import { Pressable, StyleSheet, Text, View, SectionList, TextInput  } from 'react-native';
+import { RadioButton, IconButton, Menu, Divider, Provider} from 'react-native-paper';
 import TasksAll, {setTasksAll} from './Data.jsx';
+
+import { FirebaseDB } from '../firebaseConfig.js';
+import { addDoc, collection } from 'firebase/firestore';
 
 
 const Content = () => {
@@ -111,10 +114,24 @@ const Content = () => {
     )
   }
 
-
+ 
   
   const [modalvisible, setmodalvisible] = useState(false);
   const [text, setText] = useState("");
+
+  const addTodo = async () => {       //Add todo function
+    console.log("Add Data");
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    const yyyy = String(today.getFullYear());
+    const dateToday = dd+'/'+mm+'/'+yyyy;
+    console.log(dateToday);
+
+    const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday})
+
+    console.log("Result of add task " + doc);
+  }
 
   return <View style={styles.mainContainer}>
     <View style={styles.iconStyle}>
@@ -144,18 +161,16 @@ const Content = () => {
       <View style={styles.addMenu}>
       <IconButton style={{marginLeft: '90%', marginBottom: 10}} icon='close' iconColor='white' size={20} onPress={() => (setmodalvisible(false))}/>
       <TextInput
-        label={"Enter Username"}
-        placeholder={"Enter Username"}
+        placeholder={"Enter Task"}
+        placeholderTextColor="white"
         value={text}
-        style={{backgroundColor: '#4d484a'}}
+        style={styles.textBoxTask}
         onChangeText={text => setText(text)}
-        theme={{
-          dark: true,
-          colors: {
-                     primary: '#74b0a6',secondary: '#74b0a6', 
-             }
-       }}
       />
+
+      <Pressable style={styles.addTask} onPress={() => (addTodo())}>
+        <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Add Task</Text>
+      </Pressable>
     </View>}
 
     <Pressable style={styles.button} onPress={() => (setmodalvisible(true))}>
@@ -219,7 +234,22 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: 'rgba(45, 40, 42, 0.8)',
         zIndex: 2,
-        padding: 20,
+        padding: 30,
+      },
+      addTask: {
+        marginTop: 30,
+        padding: 10,
+        margin: 10,
+        backgroundColor: '#476a64', 
+        borderRadius: 20,
+        width: '50%',
+        marginLeft: '50%'
+      },
+      textBoxTask: {
+        backgroundColor: '#4d484a',
+        color: 'white',
+        padding: 15, 
+        borderRadius: 20
       }
 })
 
