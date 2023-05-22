@@ -1,10 +1,9 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, SectionList, TextInput  } from 'react-native';
 import { RadioButton, IconButton, Menu, Divider, Provider} from 'react-native-paper';
-import TasksAll, {setTasksAll} from './Data.jsx';
 
 import { FirebaseDB } from '../firebaseConfig.js';
-import { addDoc, collection } from 'firebase/firestore';
+import { doc, addDoc, collection, onSnapshot, updateDoc , deleteDoc} from 'firebase/firestore';
 
 
 const Content = () => {
@@ -26,6 +25,9 @@ const Content = () => {
     "data":[
   ]}
   ]);
+  
+  const [modalvisible, setmodalvisible] = useState(false);
+  const [text, setText] = useState("");
   
   
   const setData = (Tasks) => { //setting data into section List 
@@ -49,49 +51,56 @@ const Content = () => {
     setsectionData([...frData]);
   }
 
-  function RenderTasks (){
-        useLayoutEffect(()=>{
-      setTasks(TasksAll);
-      setData(Tasks);
-    }, [Tasks])
-  }
+  useEffect(()=> {
+    console.log("Updated TasksList");
 
-  RenderTasks();
-    
-  const settoComplete = () => {
-    checkList.map(element => {
-        const setof = Tasks.find(({id}) => id === element);
-        setof.iscompleted = true;
-        Tasks[Tasks.findIndex(({id}) => id === element)] = setof;
+    const todoRef = collection(FirebaseDB, 'todos');
+
+    const subscriber = onSnapshot( todoRef, {
+      next: (snapshot) => {
+
+        const Tasks = [];
+        snapshot.docs.forEach((doc) => {
+          Tasks.push({
+            id: doc.id,
+            ...doc.data(),
+          })
+        });
+
+        setTasks(Tasks);
+        setData(Tasks);
+      }
     });
-    setTasksAll(Tasks);
-    setTasks([...Tasks]);
-    setcheckList([]);
-    setVisible(false);
-  }
 
-  function settoIncomplete(){
-    checkList.map(element => {
-        const setof = Tasks.find(({id}) => id === element);
-        setof.iscompleted = false;
-        Tasks[Tasks.findIndex(({id}) => id === element)] = setof;
-    });
-    setTasksAll(Tasks);
-    setTasks([...Tasks]);
-    setcheckList([]);
-    setVisible(false);
-  }
+    return () => subscriber();
+  }, []);
 
-  function deleteTask(){
+
+  const setComplete = async()=>{
+    console.log(checkList);
     checkList.map(element => {
-        const index = Tasks.findIndex(({id}) => id === element);
-        Tasks.splice(index, 1);
+      const ref = doc(FirebaseDB, `todos/${element}`);
+      updateDoc(ref, {iscompleted: true})
     });
     setcheckList([]);
-    setData(Tasks);
-    setTasksAll(Tasks);
-    setTasks([...Tasks]);
-    setVisible(false);
+  }
+
+  const setIncomplete = async()=>{
+    console.log(checkList);
+    checkList.map(element => {
+      const ref = doc(FirebaseDB, `todos/${element}`);
+      updateDoc(ref, {iscompleted: false})
+    });
+    setcheckList([]);
+  }
+
+  const deleteTask = async()=>{
+    console.log(checkList);
+    checkList.map(element => {
+      const ref = doc(FirebaseDB, `todos/${element}`);
+      deleteDoc(ref)
+    });
+    setcheckList([]);
   }
 
   function checkradio(item){
@@ -113,11 +122,6 @@ const Content = () => {
       </View>
     )
   }
-
- 
-  
-  const [modalvisible, setmodalvisible] = useState(false);
-  const [text, setText] = useState("");
 
   const addTodo = async () => {       //Add todo function
     console.log("Add Data");
@@ -142,9 +146,9 @@ const Content = () => {
           overlayAccessibilityLabel={'Close menu'}
           onDismiss={closeMenu}
           anchor={{x: 0, y: 20}}>
-          <Menu.Item onPress={() => {settoComplete()}} title="Mark Complete" />
+          <Menu.Item onPress={() => {setComplete()}} title="Mark Complete" />
           <Divider/>
-          <Menu.Item onPress={() => {settoIncomplete()}} title="Mark Incomplete" />
+          <Menu.Item onPress={() => {setIncomplete()}} title="Mark InComplete" />
           <Divider/>
           <Menu.Item onPress={() => {deleteTask()}} title="Delete" />
         </Menu>
