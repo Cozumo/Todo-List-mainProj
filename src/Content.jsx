@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View, SectionList, TextInput  } from 'reac
 import { RadioButton, IconButton, Menu, Divider, Provider} from 'react-native-paper';
 
 import { FirebaseDB } from '../firebaseConfig.js';
-import { doc, addDoc, collection, onSnapshot, updateDoc , deleteDoc} from 'firebase/firestore';
+import { doc, addDoc, collection, onSnapshot, updateDoc , deleteDoc, getDoc} from 'firebase/firestore';
 
 
 const Content = () => {
@@ -11,9 +11,15 @@ const Content = () => {
   const [checkList , setcheckList] = useState([]);    //Selected Items
   const [Tasks, setTasks] = useState([]);             //Tasks List 
   const [visible, setVisible] = useState(false);      //Menu Visibility
+  const [listof, setlistof] = useState(0);             //list of task where data is being pushed to
 
   const openMenu = () => setVisible(true);
   const closeMenu = () => setVisible(false);
+
+  
+  const [listmodal, setlistmodalvisible] = useState(false);
+  const [modalvisible, setmodalvisible] = useState(false);
+  const [text, setText] = useState("");
 
   const [sectionData, setsectionData] = useState([    //Section List
     {
@@ -23,11 +29,8 @@ const Content = () => {
   {
     "type": "Completed",
     "data":[
-  ]}
+  ]},
   ]);
-  
-  const [modalvisible, setmodalvisible] = useState(false);
-  const [text, setText] = useState("");
   
   
   const setData = (Tasks) => { //setting data into section List 
@@ -110,6 +113,21 @@ const Content = () => {
       setcheckList([...checkList ,item.id])
   }
 
+  const delListItem = async (item, id) => {       //delete item from list function
+    console.log("Add to List");
+
+    const ref = doc(FirebaseDB, `todos/${item.id}`);
+    newlist = (await getDoc(ref)).data().list;
+    newlist.splice(id, 1);
+    updateDoc(ref, {list: newlist})
+  }
+
+  function openListmodal(id){
+    setlistof(id);
+    setlistmodalvisible(true);
+    console.log(listof);
+  }
+
   const renderTaskHeader = ({section}) => {
     return (<Text style={styles.sectionHeader}>{ section.type}</Text>)
   }
@@ -118,7 +136,14 @@ const Content = () => {
     return (
       <View style={styles.task}>
         <Text style={{width: '5%'}}><RadioButton color='white'  style={{width: 3}} status={checkList.includes(item.id) ? 'checked' : 'unchecked'} value={item.id} onPress={() => {checkradio(item)}}/></Text> 
-        <Text style={{color: 'white', lineHeight:15, width: '80%', marginLeft: 30, marginTop:11}}>{item.message}</Text>
+        <Text style={{color: 'white', lineHeight:15, width: '70%', marginLeft: 30, marginTop:11}}>{item.message}</Text>
+        <Text><IconButton style={{}} icon='plus' iconColor='white' size={20} onPress={() => ( openListmodal(item.id))}/></Text>
+        {item.list.map(element => 
+          <View style={{width: '96.5%', flexDirection:'row', flexWrap:'wrap', justifyContent: 'space-between'}}>
+            <Text style={{marginLeft: 42 ,color: 'white', padding: 5, width: 190}}>-  {element}</Text>
+            <Text><IconButton style={{}} icon='delete' iconColor='white' size={15} onPress={() => (delListItem(item, element.id))}/></Text>
+          </View>
+        ) }
       </View>
     )
   }
@@ -132,9 +157,19 @@ const Content = () => {
     const dateToday = dd+'/'+mm+'/'+yyyy;
     console.log(dateToday);
 
-    const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday})
+    const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday, list: [] })
 
     console.log("Result of add task " + doc);
+  }
+
+  const addList = async () => {       //Add list function
+    console.log("Add to List");
+
+    const ref = doc(FirebaseDB, `todos/${listof}`);
+    newlist = (await getDoc(ref)).data().list;
+    newlist.push(text);
+    updateDoc(ref, {list: newlist})
+    console.log((await getDoc(ref)).data())
   }
 
   return <View style={styles.mainContainer}>
@@ -160,6 +195,23 @@ const Content = () => {
     renderItem={renderTaskModel}
     renderSectionHeader={renderTaskHeader}
     />
+
+    {listmodal &&
+      <View style={styles.addMenu}>
+      <IconButton style={{marginLeft: '90%', marginBottom: 10}} icon='close' iconColor='white' size={20} onPress={() => (setlistmodalvisible(false))}/>
+      <TextInput
+        placeholder={"Enter List Item"}
+        placeholderTextColor="white"
+        value={text}
+        style={styles.textBoxTask}
+        onChangeText={text => setText(text)}
+      />
+
+      <Pressable style={styles.addTask} onPress={addList}>
+        <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Add To List</Text>
+      </Pressable>
+    </View>}
+
 
     {modalvisible &&
       <View style={styles.addMenu}>
