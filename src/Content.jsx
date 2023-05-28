@@ -1,6 +1,8 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
-import { Pressable, StyleSheet, Text, View, SectionList, TextInput  } from 'react-native';
+import { Pressable, StyleSheet, Text, View, SectionList, TextInput, TouchableOpacity  } from 'react-native';
 import { RadioButton, IconButton, Menu, Divider, Provider} from 'react-native-paper';
+
+import * as Clipboard from 'expo-clipboard';
 
 import { FirebaseDB } from '../firebaseConfig.js';
 import { doc, addDoc, collection, onSnapshot, updateDoc , deleteDoc, getDoc} from 'firebase/firestore';
@@ -55,7 +57,6 @@ const Content = () => {
   }
 
   useEffect(()=> {
-    console.log("Updated TasksList");
 
     const todoRef = collection(FirebaseDB, 'todos');
 
@@ -128,23 +129,34 @@ const Content = () => {
     console.log(listof);
   }
 
+  const copyToClipboard = async (item) => {
+    await Clipboard.setStringAsync(item.message + "\n" + item.list.map(el => "-\t" + el + "\n"));
+  };
+  
   const renderTaskHeader = ({section}) => {
     return (<Text style={styles.sectionHeader}>{ section.type}</Text>)
   }
-  
+
+  const end = () => {
+    return (<Text style={{padding: 100}}>{"\n\n\\n\n"}</Text>)
+  }
+
   const renderTaskModel = ({item}) => {
     return (
-      <View style={styles.task}>
-        <Text style={{width: '5%'}}><RadioButton color='white'  style={{width: 3}} status={checkList.includes(item.id) ? 'checked' : 'unchecked'} value={item.id} onPress={() => {checkradio(item)}}/></Text> 
-        <Text style={{color: 'white', lineHeight:15, width: '70%', marginLeft: 30, marginTop:11}}>{item.message}</Text>
-        <Text><IconButton style={{}} icon='plus' iconColor='white' size={20} onPress={() => ( openListmodal(item.id))}/></Text>
-        {item.list.map(element => 
-          <View style={{width: '96.5%', flexDirection:'row', flexWrap:'wrap', justifyContent: 'space-between'}}>
-            <Text style={{marginLeft: 42 ,color: 'white', padding: 5, width: 190}}>-  {element}</Text>
-            <Text><IconButton style={{}} icon='delete' iconColor='white' size={15} onPress={() => (delListItem(item, element.id))}/></Text>
-          </View>
-        ) }
-      </View>
+      <Pressable onPress={() => {checkradio(item)}} onLongPress={() => copyToClipboard(item)} style={({ pressed }) => [{opacity:pressed ? 0.5 : 1}]}>
+        <View style={styles.task}>
+          <Text style={{width: '5%'}}><RadioButton color='white'  style={{width: 3}} status={checkList.includes(item.id) ? 'checked' : 'unchecked'} value={item.id} onPress={() => {checkradio(item)}}/></Text> 
+          <Text style={ item.iscompleted ? styles.taskcompleted : styles.taskincompleted }>{item.message}</Text>
+          <Text><IconButton style={{}} icon='plus' iconColor='white' size={20} onPress={() => ( openListmodal(item.id))}/></Text>
+          {item.list.map(element => 
+            <View style={{width: '97%', flexDirection:'row', flexWrap:'wrap', justifyContent: 'space-between'}}>
+              <Text style={ item.iscompleted ? styles.listcompleted : styles.listincompleted}>➥  {element}</Text>
+              <Text><IconButton style={{}} icon='delete' iconColor='white' size={20} onPress={() => (delListItem(item, element.id))}/></Text>
+            </View>
+          ) }
+          <Text style={styles.datestyle}>{item.date}</Text>
+        </View>
+      </Pressable>
     )
   }
 
@@ -155,11 +167,8 @@ const Content = () => {
     const mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
     const yyyy = String(today.getFullYear());
     const dateToday = dd+'/'+mm+'/'+yyyy;
-    console.log(dateToday);
 
     const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday, list: [] })
-
-    console.log("Result of add task " + doc);
   }
 
   const addList = async () => {       //Add list function
@@ -207,7 +216,7 @@ const Content = () => {
         onChangeText={text => setText(text)}
       />
 
-      <Pressable style={styles.addTask} onPress={addList}>
+      <Pressable style={styles.addTask} onPress={addList} >
         <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Add To List</Text>
       </Pressable>
     </View>}
@@ -306,6 +315,42 @@ const styles = StyleSheet.create({
         color: 'white',
         padding: 15, 
         borderRadius: 20
+      },
+      taskcompleted: {
+        color: 'rgba(250, 250, 250, 0.7)',
+        lineHeight:15,
+        width: '70%',
+        marginLeft: 30,
+        marginTop:11,
+        textDecorationLine: 'line-through',
+        fontStyle: 'italic'
+      },
+      taskincompleted: {
+        color: 'white',
+        lineHeight:15,
+        width: '70%',
+        marginLeft: 30,
+        marginTop:11,
+      },
+      listcompleted: {
+        marginLeft: 42 ,
+        color: 'rgba(250, 250, 250, 0.7)',
+        padding: 5, 
+        width: 190,
+        textDecorationLine: 'line-through',
+        fontStyle: 'italic'
+      },
+      listincompleted: {
+        marginLeft: 42 ,
+        color: 'white', 
+        padding: 5, 
+        width: 190,
+      },
+      datestyle: { 
+        textAlign:'center', 
+        color: 'rgba(250, 250, 250, 0.5)', 
+        padding: 10, 
+        paddingBottom: 10
       }
 })
 
