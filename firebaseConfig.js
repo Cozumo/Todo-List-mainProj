@@ -2,12 +2,13 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from 'firebase/firestore'
 import { getAuth } from "firebase/auth";
+import config from "./config";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "",
+  apiKey: config.apiKey,
   authDomain: "todolist-c8a37.firebaseapp.com",
   projectId: "todolist-c8a37",
   storageBucket: "todolist-c8a37.appspot.com",
