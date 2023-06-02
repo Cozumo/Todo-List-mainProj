@@ -8,7 +8,14 @@ import { FirebaseDB } from '../firebaseConfig.js';
 import { doc, addDoc, collection, onSnapshot, updateDoc , deleteDoc, getDoc} from 'firebase/firestore';
 
 
-const Content = () => {
+let user = "";
+
+export function setUser(newUser){
+  user = newUser;
+  console.log(user.uid);
+}
+
+const Content = ({navigation}) => {
 
   const [checkList , setcheckList] = useState([]);    //Selected Items
   const [Tasks, setTasks] = useState([]);             //Tasks List 
@@ -58,17 +65,19 @@ const Content = () => {
 
   useEffect(()=> {
 
-    const todoRef = collection(FirebaseDB, 'todos');
+    const todoRef = collection(FirebaseDB, `todos`);
 
     const subscriber = onSnapshot( todoRef, {
       next: (snapshot) => {
 
         const Tasks = [];
         snapshot.docs.forEach((doc) => {
-          Tasks.push({
-            id: doc.id,
-            ...doc.data(),
-          })
+          if(doc.data().userid == user.uid){
+            Tasks.push({
+              id: doc.id,
+              ...doc.data(),
+            })
+          }
         });
 
         setTasks(Tasks);
@@ -123,6 +132,11 @@ const Content = () => {
     updateDoc(ref, {list: newlist})
   }
 
+  function handlelogout(){
+    setUser("");
+    navigation.navigate('Login');
+  }
+
   function openListmodal(id){
     setlistof(id);
     setlistmodalvisible(true);
@@ -168,17 +182,16 @@ const Content = () => {
     const yyyy = String(today.getFullYear());
     const dateToday = dd+'/'+mm+'/'+yyyy;
 
-    const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday, list: [] })
+    const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday, list: [], userid: String(user.uid) })
   }
 
-  const addList = async () => {       //Add list function
+  const addList = async () => {       //Add list item function
     console.log("Add to List");
 
     const ref = doc(FirebaseDB, `todos/${listof}`);
     newlist = (await getDoc(ref)).data().list;
     newlist.push(text);
     updateDoc(ref, {list: newlist})
-    console.log((await getDoc(ref)).data())
   }
 
   return <View style={styles.mainContainer}>
@@ -195,6 +208,8 @@ const Content = () => {
           <Menu.Item onPress={() => {setIncomplete()}} title="Mark InComplete" />
           <Divider/>
           <Menu.Item onPress={() => {deleteTask()}} title="Delete" />
+          <Divider/>
+          <Menu.Item onPress={() => {handlelogout()}} title="Logout" />
         </Menu>
       </Provider>
     </View>
