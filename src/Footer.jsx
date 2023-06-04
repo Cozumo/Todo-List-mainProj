@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     footer: {
         backgroundColor: '#2d282a',
         flex: 0.03,
-        padding:7
+        height: 0
     },
 })
 

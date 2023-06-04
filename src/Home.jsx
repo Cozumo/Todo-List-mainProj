@@ -4,14 +4,14 @@ import Footer from  './Footer.jsx';
 import Content from  './Content.jsx';
 
 
-export default Home = () => {
+export default Home = ({navigation}) => {
 
 
     return <View style={styles.container}>
         
         <Header/>
         
-        <Content/>
+        <Content navigation={navigation}/>
         
         <Footer/>
     
