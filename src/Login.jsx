@@ -7,37 +7,53 @@ import { setUser } from "./Content.jsx";
 
 //handle user registration while sending data to firebase
 const handleRegister = (username, pass, navigation) => {
-    const auth = getAuth();
-    createUserWithEmailAndPassword(auth, username, pass)
-    .then((userCredential) => {
-        setUser(userCredential.user);
-        console.log("Registered User");
-        navigation.navigate('Home');
-    })
-    .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        Alert.alert(errorCode, errorMessage, [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
-    });
+    if(validateEmail(username)){
+        const auth = getAuth();
+        createUserWithEmailAndPassword(auth, username, pass)
+        .then((userCredential) => {
+            setUser(userCredential.user);
+            console.log("Registered User");
+            navigation.navigate('Home');
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            Alert.alert(errorCode, errorMessage, [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
+        });
+    }
+    else{
+        Alert.alert("Wrong Email Format", "Email not Correct!", [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
+    }
 }
 
 
 //handle user Login while sending data to firebase
 const handleLogin = (username, pass, navigation) => {
-    const auth = getAuth();
-    signInWithEmailAndPassword(auth, username, pass)
-      .then((userCredential) => {
-        setUser(userCredential.user);
-        console.log("Logged User");
-        navigation.navigate('Home');
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        Alert.alert(errorCode, errorMessage, [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
-      });
+    if(validateEmail(username)){
+        const auth = getAuth();
+        signInWithEmailAndPassword(auth, username, pass)
+          .then((userCredential) => {
+            setUser(userCredential.user);
+            console.log("Logged User");
+            navigation.navigate('Home');
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            Alert.alert(errorCode, errorMessage, [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
+          });
+    }
+    else{
+        Alert.alert("Wrong Email Format", "Email not Correct!", [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
+    }
 }
 
+const emailValidationRegex = "^[0-9A-Za-z._+]+@[A-Za-z0-9]+.[A-Za-z0-9]+$";    
+
+
+const validateEmail = (email) => {
+    return email.match(emailValidationRegex);
+}
 
 
 export default Login = ({navigation}) => {
@@ -45,11 +61,12 @@ export default Login = ({navigation}) => {
     const [username, setUsername] = useState("");
     const [pass, setPass] = useState("");
 
+
     return <View style={styles.loginPage}>
         <Text style={styles.Heading} >TODO LIST</Text>
 
         <TextInput
-            label={"Enter Username"}
+            label={"Enter Email"}
             value={username}
             style={styles.inputStyle}
             onChangeText={username => setUsername(username)}
@@ -57,6 +74,7 @@ export default Login = ({navigation}) => {
 
         <TextInput
             label={"Enter Password"}
+            secureTextEntry={true}
             value={pass}
             style={styles.inputStyle}
             onChangeText={pass => setPass(pass)}

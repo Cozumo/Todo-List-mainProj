@@ -20,7 +20,6 @@ export function setUser(newUser){
 
 const Content = ({navigation}) => {
 
-  user = { 'uid': "VhqyvfdiiSYknoMY3UV3ikskBFD3" };
   const [checkList , setcheckList] = useState([]);    //Selected Items using Radio button
   const [visible, setMenuVisibility] = useState(false);      //Visibility toggle of menu
   const [listof, setlistof] = useState(0);             //id task where new list item is being pushed
