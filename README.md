@@ -10,4 +10,3 @@ run `npm i`
 
 ## Run using npm
 
-run `npm start`;
