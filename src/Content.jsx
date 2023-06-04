@@ -8,51 +8,37 @@ import { FirebaseDB } from '../firebaseConfig.js';
 import { doc, addDoc, collection, onSnapshot, updateDoc , deleteDoc, getDoc} from 'firebase/firestore';
 
 
-let user = "";
+let user = "";    //refers to logged user
 
-export function setUser(newUser){
+
+//set logged user to access his/her id for data insertion
+export function setUser(newUser){    
   user = newUser;
   console.log(user.uid);
 }
 
+
 const Content = ({navigation}) => {
 
-  const [checkList , setcheckList] = useState([]);    //Selected Items
-  const [Tasks, setTasks] = useState([]);             //Tasks List 
-  const [visible, setVisible] = useState(false);      //Menu Visibility
-  const [listof, setlistof] = useState(0);             //list of task where data is being pushed to
-
-  const openMenu = () => setVisible(true);
-  const closeMenu = () => setVisible(false);
-
+  user = { 'uid': "VhqyvfdiiSYknoMY3UV3ikskBFD3" };
+  const [checkList , setcheckList] = useState([]);    //Selected Items using Radio button
+  const [visible, setMenuVisibility] = useState(false);      //Visibility toggle of menu
+  const [listof, setlistof] = useState(0);             //id task where new list item is being pushed
   
-  const [listmodal, setlistmodalvisible] = useState(false);
-  const [modalvisible, setmodalvisible] = useState(false);
-  const [text, setText] = useState("");
+  const [listmodal, setlistmodalvisible] = useState(false);            //toggle state for add to list menu
+  const [modalvisible, setmodalvisible] = useState(false);            //toggle state of add task menu
+  const [editmodalvisible, seteditmodalvisible] = useState(false);            //toggle state of edit todo menu
+  const [text, setText] = useState("");                               //textbox input state 
 
-  const [sectionData, setsectionData] = useState([    //Section List
-    {
-    "type": "Incompleted",
-    "data":[
-  ]},
-  {
-    "type": "Completed",
-    "data":[
-  ]},
-  ]);
+
+  //Section list managing todos
+  const [sectionData, setsectionData] = useState([{ "type": "Pending", "data":[] }, { "type": "Done", "data":[] }, { "type": "\n\n", "data":[] }]);
   
   
-  const setData = (Tasks) => { //setting data into section List 
-    const frData = [
-      {
-      "type": "Incompleted",
-      "data":[
-    ]},
-    {
-      "type": "Completed",
-      "data":[
-    ]}
-    ];
+  //Component to set data into section list
+  const setData = (Tasks) => {
+    
+    const frData = [{ "type": "Pending", "data":[] }, { "type": "Done", "data":[] }, { "type": "\n\n", "data":[] }]; 
     Tasks.map(element => {
       if(element.iscompleted === true){
         frData[1].data.push(element);
@@ -63,14 +49,14 @@ const Content = ({navigation}) => {
     setsectionData([...frData]);
   }
 
+
+  //Calling collection and storing todos into section list where user id matches
   useEffect(()=> {
-
     const todoRef = collection(FirebaseDB, `todos`);
-
     const subscriber = onSnapshot( todoRef, {
       next: (snapshot) => {
-
         const Tasks = [];
+
         snapshot.docs.forEach((doc) => {
           if(doc.data().userid == user.uid){
             Tasks.push({
@@ -79,16 +65,14 @@ const Content = ({navigation}) => {
             })
           }
         });
-
-        setTasks(Tasks);
         setData(Tasks);
       }
     });
-
     return () => subscriber();
   }, []);
 
 
+  //Component to to set iscompleted: bool to true of individual todos
   const setComplete = async()=>{
     console.log(checkList);
     checkList.map(element => {
@@ -98,6 +82,8 @@ const Content = ({navigation}) => {
     setcheckList([]);
   }
 
+
+  //Component to set iscompleted: bool to false of individual todos
   const setIncomplete = async()=>{
     console.log(checkList);
     checkList.map(element => {
@@ -107,6 +93,8 @@ const Content = ({navigation}) => {
     setcheckList([]);
   }
 
+
+  //Component to delete document from todos firestore
   const deleteTask = async()=>{
     console.log(checkList);
     checkList.map(element => {
@@ -116,6 +104,8 @@ const Content = ({navigation}) => {
     setcheckList([]);
   }
 
+
+  //function to handle radiobutton taps of each todo
   function checkradio(item){
     if(checkList.includes(item.id))
       setcheckList(checkList.filter((x) => x !== item.id));
@@ -123,59 +113,45 @@ const Content = ({navigation}) => {
       setcheckList([...checkList ,item.id])
   }
 
-  const delListItem = async (item, id) => {       //delete item from list function
-    console.log("Add to List");
+
+  //delete item from list of a todo
+  const delListItem = async (item, el) => {       
+    console.log("Delete List Item");
 
     const ref = doc(FirebaseDB, `todos/${item.id}`);
     newlist = (await getDoc(ref)).data().list;
-    newlist.splice(id, 1);
+    const id = newlist.indexOf(el);
+    console.log(newlist.splice(id, 1));
     updateDoc(ref, {list: newlist})
   }
 
+
+  //handle logout
   function handlelogout(){
     setUser("");
     navigation.navigate('Login');
   }
 
+
+  //add to list modal view of each todo
   function openListmodal(id){
     setlistof(id);
     setlistmodalvisible(true);
     console.log(listof);
   }
 
-  const copyToClipboard = async (item) => {
-    await Clipboard.setStringAsync(item.message + "\n" + item.list.map(el => "-\t" + el + "\n"));
-  };
-  
-  const renderTaskHeader = ({section}) => {
-    return (<Text style={styles.sectionHeader}>{ section.type}</Text>)
+
+  function openEditmodal(id){
+    setlistof(id);
+    seteditmodalvisible(true);
+    console.log(listof);
   }
 
-  const end = () => {
-    return (<Text style={{padding: 100}}>{"\n\n\\n\n"}</Text>)
-  }
 
-  const renderTaskModel = ({item}) => {
-    return (
-      <Pressable onPress={() => {checkradio(item)}} onLongPress={() => copyToClipboard(item)} style={({ pressed }) => [{opacity:pressed ? 0.5 : 1}]}>
-        <View style={styles.task}>
-          <Text style={{width: '5%'}}><RadioButton color='white'  style={{width: 3}} status={checkList.includes(item.id) ? 'checked' : 'unchecked'} value={item.id} onPress={() => {checkradio(item)}}/></Text> 
-          <Text style={ item.iscompleted ? styles.taskcompleted : styles.taskincompleted }>{item.message}</Text>
-          <Text><IconButton style={{}} icon='plus' iconColor='white' size={20} onPress={() => ( openListmodal(item.id))}/></Text>
-          {item.list.map(element => 
-            <View style={{width: '97%', flexDirection:'row', flexWrap:'wrap', justifyContent: 'space-between'}}>
-              <Text style={ item.iscompleted ? styles.listcompleted : styles.listincompleted}>➥  {element}</Text>
-              <Text><IconButton style={{}} icon='delete' iconColor='white' size={20} onPress={() => (delListItem(item, element.id))}/></Text>
-            </View>
-          ) }
-          <Text style={styles.datestyle}>{item.date}</Text>
-        </View>
-      </Pressable>
-    )
-  }
-
-  const addTodo = async () => {       //Add todo function
+  //Function to add todo
+  const handleAddTodo = async () => {
     console.log("Add Data");
+    setmodalvisible(false);
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
@@ -183,25 +159,81 @@ const Content = ({navigation}) => {
     const dateToday = dd+'/'+mm+'/'+yyyy;
 
     const doc = addDoc(collection(FirebaseDB, 'todos'), {message: text, iscompleted: false, date: dateToday, list: [], userid: String(user.uid) })
+    setText("");
   }
 
-  const addList = async () => {       //Add list item function
+  
+  //Function to add an item into a list
+  const handleAddList = async () => {       
     console.log("Add to List");
-
+    setlistmodalvisible(false);
     const ref = doc(FirebaseDB, `todos/${listof}`);
     newlist = (await getDoc(ref)).data().list;
     newlist.push(text);
     updateDoc(ref, {list: newlist})
+    setText("");
   }
 
+
+  //Component to handle edit event for each todo
+  const handleEditTodo = async () => {
+    console.log("Edit Data");
+    seteditmodalvisible(false);
+    const ref = doc(FirebaseDB, `todos/${listof}`);
+    newMessage = text;
+    updateDoc(ref, {message: newMessage});
+    setText("");
+  }
+
+
+  //copy to clipboard function
+  const copyToClipboard = async (item) => {
+    await Clipboard.setStringAsync(item.message + "\n" + item.list.map(el => "-\t" + el + "\n"));
+  };
+  
+
+  //rendering section header of section list
+  const renderTaskHeader = ({section}) => {
+    return (<Text style={styles.sectionHeader}>{ section.type}</Text>)
+  }
+
+  
+  //rendering section list
+  const renderTaskModel = ({item}) => {
+    return (
+      <Pressable onPress={() => {openEditmodal(item.id)}} onLongPress={() => copyToClipboard(item)} style={({ pressed }) => [{opacity:pressed ? 0.8 : 1}]}>
+        <View style={styles.task}>
+          <Text style={{width: '5%'}}><RadioButton color='white'  style={{width: 3}} status={checkList.includes(item.id) ? 'checked' : 'unchecked'} value={item.id} onPress={() => {checkradio(item)}}/></Text> 
+          <Text style={ item.iscompleted ? styles.taskcompleted : styles.taskincompleted }>{item.message}</Text>
+          <Text><IconButton style={{}} icon='plus' iconColor='white' size={20} onPress={() => ( openListmodal(item.id))}/></Text>
+          
+          {/* Rendering list of a todo */}
+          {item.list.map(element => 
+            <View style={{width: '97%', flexDirection:'row', flexWrap:'wrap', justifyContent: 'space-between'}}>
+              <Text style={ item.iscompleted ? styles.listcompleted : styles.listincompleted}>➥  {element}</Text>
+              <Text><IconButton style={{}} icon='delete' iconColor='white' size={20} onPress={() => (delListItem(item, element))}/></Text>
+            </View>
+          ) }          
+          
+          {/* Rendering date of todo */}
+          <Text style={styles.datestyle}>{item.date}</Text>
+        </View>
+      </Pressable>
+    )
+  }
+
+
+  //Main Component for Content Page
   return <View style={styles.mainContainer}>
+
+    {/*Settings Menu to perform basic functions on individual todo*/}
     <View style={styles.iconStyle}>
-      <IconButton style={{position:'relative', right:-100}} icon='dots-vertical' iconColor='white' size={20} onPress={openMenu} />
+      <IconButton style={{position:'relative', right:-100}} icon='dots-vertical' iconColor='white' size={20} onPress={() => setMenuVisibility(true)} />
       <Provider>
         <Menu 
           visible={visible}
           overlayAccessibilityLabel={'Close menu'}
-          onDismiss={closeMenu}
+          onDismiss={() => setMenuVisibility(false)}
           anchor={{x: 0, y: 20}}>
           <Menu.Item onPress={() => {setComplete()}} title="Mark Complete" />
           <Divider/>
@@ -214,14 +246,36 @@ const Content = ({navigation}) => {
       </Provider>
     </View>
 
+
+    {/*Rendering section list*/}
     <SectionList
-    sections={sectionData}
-    renderItem={renderTaskModel}
-    renderSectionHeader={renderTaskHeader}
+      sections={sectionData}
+      renderItem={renderTaskModel}
+      renderSectionHeader={renderTaskHeader}
     />
 
+    {/*List Modal which ask user to add an item into list of selected todo*/}
+    {editmodalvisible &&
+    <View style={styles.addMenu}>
+      <IconButton style={{marginLeft: '90%', marginBottom: 10}} icon='close' iconColor='white' size={20} onPress={() => (seteditmodalvisible(false))}/>
+      <TextInput
+        placeholder={"Enter new Todo"}
+        placeholderTextColor="white"
+        value={text}
+        style={styles.textBoxTask}
+        onChangeText={text => setText(text)}
+      />
+
+      {/* Add to List Btn */}
+      <Pressable style={({ pressed }) => [{opacity:pressed ? 0.5 : 1. } , styles.addTask] } onPress={handleEditTodo} >
+        <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Edit</Text>
+      </Pressable>
+    </View>}
+
+
+    {/*List Modal which ask user to add an item into list of selected todo*/}
     {listmodal &&
-      <View style={styles.addMenu}>
+    <View style={styles.addMenu}>
       <IconButton style={{marginLeft: '90%', marginBottom: 10}} icon='close' iconColor='white' size={20} onPress={() => (setlistmodalvisible(false))}/>
       <TextInput
         placeholder={"Enter List Item"}
@@ -231,14 +285,16 @@ const Content = ({navigation}) => {
         onChangeText={text => setText(text)}
       />
 
-      <Pressable style={styles.addTask} onPress={addList} >
+      {/* Add to List Btn */}
+      <Pressable style={({ pressed }) => [{opacity:pressed ? 0.5 : 1. } , styles.addTask] } onPress={handleAddList} >
         <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Add To List</Text>
       </Pressable>
     </View>}
 
 
+    {/*todo Modal which ask user to insert a new todo */}
     {modalvisible &&
-      <View style={styles.addMenu}>
+    <View style={styles.addMenu}>
       <IconButton style={{marginLeft: '90%', marginBottom: 10}} icon='close' iconColor='white' size={20} onPress={() => (setmodalvisible(false))}/>
       <TextInput
         placeholder={"Enter Task"}
@@ -248,50 +304,60 @@ const Content = ({navigation}) => {
         onChangeText={text => setText(text)}
       />
 
-      <Pressable style={styles.addTask} onPress={() => (addTodo())}>
+      {/* Add Task Btn */}
+      <Pressable style={({ pressed }) => [{opacity:pressed ? 0.5 : 1. } , styles.addTask] } onPress={handleAddTodo}>
         <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Add Task</Text>
       </Pressable>
     </View>}
 
-    <Pressable style={styles.button} onPress={() => (setmodalvisible(true))}>
+
+    {/*Add button to summon todo Modal */}
+    <Pressable style={({ pressed }) => [{opacity:pressed ? 0.5 : 1 } , styles.button]} onPress={() => (setmodalvisible(true))}>
       <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>+</Text>
     </Pressable>
   </View>
 }
 
+
+// Content StyleSheet
 const styles = StyleSheet.create({
     mainContainer: {
         backgroundColor: '#2d282a',
         flex: 0.90,
-        paddingBottom: 20
+        paddingBottom: 10
       },
       button: {
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 100,
         elevation: 3,
-        backgroundColor: '#476a64',
+        backgroundColor: '#58857d',
         padding: 5,
         width: '16%',
         height: '9%',
         position: 'absolute',
-        top: '86%',
-        left: '77%'
+        top: '80%',
+        left: '77%',
+        borderColor: '#527570',
+        borderWidth: 1,
       },
       task: {
-        backgroundColor: '#476a64',
+        backgroundColor: '#58857d',
         margin: 20,
         marginTop: 30,
         marginBottom: 0,
         padding: 10,
-        borderRadius: 20, 
+        borderRadius: 30, 
         flexDirection:'row', 
-        flexWrap:'wrap'
+        flexWrap:'wrap',
+        borderColor: '#4e4f4e',
+        borderWidth: 1,
+        
       },
       sectionHeader: {
         color: "white",
         paddingLeft: 30,
-        paddingTop: 50,
+        paddingTop: 30,
         fontSize: 30
       },
       menuWrapper: {
@@ -320,7 +386,7 @@ const styles = StyleSheet.create({
         marginTop: 30,
         padding: 10,
         margin: 10,
-        backgroundColor: '#476a64', 
+        backgroundColor: '#58857d', 
         borderRadius: 20,
         width: '50%',
         marginLeft: '50%'

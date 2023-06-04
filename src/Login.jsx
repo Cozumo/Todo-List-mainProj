@@ -1,43 +1,49 @@
 import { useState } from 'react';
-import { Button, Pressable, StyleSheet, Text, View, SectionList } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View} from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword  } from "firebase/auth";
 import { setUser } from "./Content.jsx";
+
+
+//handle user registration while sending data to firebase
+const handleRegister = (username, pass, navigation) => {
+    const auth = getAuth();
+    createUserWithEmailAndPassword(auth, username, pass)
+    .then((userCredential) => {
+        setUser(userCredential.user);
+        console.log("Registered User");
+        navigation.navigate('Home');
+    })
+    .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        Alert.alert(errorCode, errorMessage, [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
+    });
+}
+
+
+//handle user Login while sending data to firebase
+const handleLogin = (username, pass, navigation) => {
+    const auth = getAuth();
+    signInWithEmailAndPassword(auth, username, pass)
+      .then((userCredential) => {
+        setUser(userCredential.user);
+        console.log("Logged User");
+        navigation.navigate('Home');
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        Alert.alert(errorCode, errorMessage, [ { text: 'Ok', style: 'Ok', } ], { cancelable: true } );
+      });
+}
+
+
 
 export default Login = ({navigation}) => {
 
     const [username, setUsername] = useState("");
     const [pass, setPass] = useState("");
-
-    function handleRegister(){
-        const auth = getAuth();
-        createUserWithEmailAndPassword(auth, username, pass)
-        .then((userCredential) => {
-            setUser(userCredential.user);
-            console.log("Registered User");
-            navigation.navigate('Home');
-        })
-        .catch((error) => {
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            console.log(errorMessage);
-        });
-    }
-
-    function handleLogin(){
-        const auth = getAuth();
-        signInWithEmailAndPassword(auth, username, pass)
-          .then((userCredential) => {
-            setUser(userCredential.user);
-            console.log("Logged User");
-            navigation.navigate('Home');
-          })
-          .catch((error) => {
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            console.log(errorMessage);
-          });
-    }
 
     return <View style={styles.loginPage}>
         <Text style={styles.Heading} >TODO LIST</Text>
@@ -56,10 +62,13 @@ export default Login = ({navigation}) => {
             onChangeText={pass => setPass(pass)}
       />
     
-        <Pressable style={styles.logbuttonStyle} onPress={handleLogin}>
+        {/* Login Button */}
+        <Pressable style={({ pressed }) => [{opacity:pressed ? 0.85 : 1. } , styles.logbuttonStyle ]} onPress={() => handleLogin(username, pass, navigation)}>
             <Text style={{ color: 'white', textAlign:'center', fontSize: 20}}>Login</Text>
         </Pressable>
-        <Pressable style={styles.regbuttonStyle} onPress={handleRegister}>
+
+        {/* Register Button */}
+        <Pressable style={({ pressed }) => [{opacity:pressed ? 0.85 : 1. } , styles.regbuttonStyle ]} onPress={() => handleRegister(username, pass, navigation)}>
             <Text style={{ color: '#476a64', textAlign:'center', fontSize: 20}}>Register</Text>
         </Pressable>
 
